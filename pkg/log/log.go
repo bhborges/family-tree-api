@@ -7,8 +7,9 @@ import (
 	"context"
 	"encoding/json"
 
+	"github.com/bhborges/family-tree-api/pkg/version"
+
 	"github.com/blendle/zapdriver"
-	"github.com/gogo/protobuf/version"
 	"github.com/kelseyhightower/envconfig"
 	"go.uber.org/fx"
 	"go.uber.org/fx/fxevent"
