@@ -4,11 +4,12 @@ package adapter
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/bhborges/family-tree-api/internal/app"
 	"github.com/bhborges/family-tree-api/internal/domain"
 
-	"github.com/lib/pq"
 	"github.com/newrelic/go-agent/v3/newrelic"
 	"go.uber.org/zap"
 	"gorm.io/gorm"
@@ -32,7 +33,7 @@ func NewPostgresRepository(db *gorm.DB, log *zap.Logger) *PostgresRepository {
 
 // GetPerson returns a person registered.
 // Filtered by ID.
-func (r *PostgresRepository) GetPersonByID(ctx context.Context, ID string) (*domain.Person, error) {
+func (r *PostgresRepository) GetPersonByID(ctx context.Context, id string) (*domain.Person, error) {
 	trans := newrelic.FromContext(ctx)
 	if trans != nil {
 		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "GetPerson")
@@ -44,13 +45,14 @@ func (r *PostgresRepository) GetPersonByID(ctx context.Context, ID string) (*dom
 	var p domain.Person
 
 	tx := r.db.WithContext(ctx)
-	tx.Where("deleted_at IS NULL")
+	err := tx.Where(&domain.Person{
+		ID:        id,
+	}).First(&p).Error
 
-	if len(ID) > 0 {
-		tx = tx.Where("code = ANY(?)", pq.Array(ID))
+	if errors.Is(err, gorm.ErrRecordNotFound) {
+		return nil, app.ErrPersonNotFound
 	}
 
-	err := tx.Find(&p).Error
 	if err != nil {
 		return nil, err
 	}
@@ -59,13 +61,17 @@ func (r *PostgresRepository) GetPersonByID(ctx context.Context, ID string) (*dom
 }
 
 // CreatePerson create a new person.
-func (r *PostgresRepository) CreatePerson(ctx context.Context, p *domain.Person) (string, error) {
+func (r *PostgresRepository) CreatePerson(ctx context.Context, dp domain.Person) (string, error) {
 	trans := newrelic.FromContext(ctx)
 	if trans != nil {
 		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "CreatePerson")
 		segment := trans.StartSegment(segmentName)
 
 		defer segment.End()
+	}
+
+	p := domain.Person{
+		Name: dp.Name,
 	}
 
 	tx := r.db.Create(&p)
@@ -78,7 +84,7 @@ func (r *PostgresRepository) CreatePerson(ctx context.Context, p *domain.Person)
 }
 
 // UpdatePerson update a person.
-func (r *PostgresRepository) UpdatePerson(ctx context.Context, p *domain.Person) (string, error) {
+func (r *PostgresRepository) UpdatePerson(ctx context.Context, p domain.Person) (error) {
 	trans := newrelic.FromContext(ctx)
 	if trans != nil {
 		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "UpdatePerson")
@@ -87,17 +93,13 @@ func (r *PostgresRepository) UpdatePerson(ctx context.Context, p *domain.Person)
 		defer segment.End()
 	}
 
-	tx := r.db.Save(&p)
-	// TODO: fix
-	if tx.Error != nil {
-		return "", tx.Error
-	}
+	tx := r.db.Model(&p).Update("name", p.Name)
 
-	return p.ID, nil
+	return tx.Error
 }
 
 // DeletePerson delete a person.
-func (r *PostgresRepository) DeletePerson(ctx context.Context, p *domain.Person) error {
+func (r *PostgresRepository) DeletePerson(ctx context.Context, id string) error {
 	trans := newrelic.FromContext(ctx)
 	if trans != nil {
 		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "DeletePerson")
@@ -106,7 +108,9 @@ func (r *PostgresRepository) DeletePerson(ctx context.Context, p *domain.Person)
 		defer segment.End()
 	}
 
-	tx := r.db.Delete(&p)
+	fmt.Println("teste")
+
+	tx := r.db.Delete(&domain.Person{ID: id})
 	// TODO: fix
 	if tx.Error != nil {
 		return tx.Error
