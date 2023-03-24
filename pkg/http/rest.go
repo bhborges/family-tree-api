@@ -70,8 +70,6 @@ func ServePlainHTTP(lc fx.Lifecycle, handler *chi.Mux, logger *zap.Logger, liste
 		OnStart: func(context.Context) error {
 			logger.Info("starting HTTP server...", zap.String("address", listener.Addr().String()))
 
-			// NOTE: this error is not checked. Fix in the future. More details in here:
-			// https://github.com/uber-go/fx/issues/600
 			//nolint:errcheck
 			go server.Serve(listener)
 

@@ -24,6 +24,9 @@ type HTTPServer struct {
 // Application specifies the signature of Application.
 type Application interface {
 	GetPersonByID(context.Context, string) (*domain.Person, error)
+	CreatePerson(context.Context, domain.Person) (string, error)
+	UpdatePerson(context.Context, domain.Person) (error)
+	DeletePerson(context.Context, string) (error)
 }
 
 // ProvideHTTPServer returns a new instance of an HTTP server.
@@ -44,8 +47,10 @@ func ProvideHTTPServer(
 func RegisterHandlers(h *HTTPServer) {
 	h.router.Route("/familytree", func(r chi.Router) {
 		r.Route("/person", func(r chi.Router) {
-			r.Get("/{id}", http.WithAPM(h.apm, "/", h.GetPersonByID))
+			r.Get("/{id}", http.WithAPM(h.apm, "/{id}", h.GetPersonByID))
+			r.Post("/", http.WithAPM(h.apm, "/", h.CreatePerson))
+			r.Patch("/", http.WithAPM(h.apm, "/", h.UpdatePerson))
+			r.Delete("/{id}", http.WithAPM(h.apm, "/{id}", h.DeletePerson))
 		})
-
 	})
 }
