@@ -26,10 +26,14 @@ type Application interface {
 	ListPeople(context.Context) ([]*domain.Person, error)
 	GetPersonByID(context.Context, string) (*domain.Person, error)
 	CreatePerson(context.Context, domain.Person) (string, error)
+	CreatePeople(context.Context, []domain.Person) ([]string, error)
 	UpdatePerson(context.Context, domain.Person) error
 	DeletePerson(context.Context, string) error
 	CreateRelationship(context.Context, domain.Relationship) (string, error)
-	BuildFamilyTree(ctx context.Context, id string) (*domain.FamilyTree, error)
+	CreateRelationships(context.Context, []domain.Relationship) ([]string, error)
+	UpdateRelationship(context.Context, domain.Relationship) error
+	DeleteRelationship(context.Context, string) error
+	BuildFamilyTree(context.Context, string) (*domain.FamilyTree, error)
 }
 
 // ProvideHTTPServer returns a new instance of an HTTP server.
@@ -56,8 +60,13 @@ func RegisterHandlers(h *HTTPServer) {
 			r.Patch("/", http.WithAPM(h.apm, "/", h.UpdatePerson))
 			r.Delete("/{id}", http.WithAPM(h.apm, "/{id}", h.DeletePerson))
 		})
+		r.Route("/people", func(r chi.Router) {
+			r.Post("/", http.WithAPM(h.apm, "/", h.CreatePeople))
+		})
 		r.Route("/relationship", func(r chi.Router) {
 			r.Post("/", http.WithAPM(h.apm, "/", h.CreateRelationship))
+			r.Put("/{id}", http.WithAPM(h.apm, "/{id}", h.UpdateRelationship))
+			r.Delete("/{id}", http.WithAPM(h.apm, "/{id}", h.DeleteRelationship))
 		})
 	})
 }

@@ -3,6 +3,7 @@ module github.com/bhborges/family-tree-api
 go 1.20
 
 require (
+	github.com/DATA-DOG/go-sqlmock v1.5.0
 	github.com/blendle/zapdriver v1.3.1
 	github.com/go-chi/chi/v5 v5.0.8
 	github.com/go-chi/render v1.0.2

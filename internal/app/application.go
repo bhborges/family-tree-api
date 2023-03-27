@@ -26,9 +26,13 @@ type Repository interface {
 	ListPeople(context.Context) ([]*domain.Person, error)
 	GetPersonByID(context.Context, string) (*domain.Person, error)
 	CreatePerson(context.Context, domain.Person) (string, error)
+	CreatePeople(context.Context, []domain.Person) ([]string, error)
 	UpdatePerson(context.Context, domain.Person) error
 	DeletePerson(context.Context, string) error
 	CreateRelationship(context.Context, domain.Relationship) (string, error)
+	CreateRelationships(context.Context, []domain.Relationship) ([]string, error)
+	UpdateRelationship(context.Context, *domain.Relationship) error
+	DeleteRelationship(context.Context, string) error
 	BuildFamilyTree(context.Context, string) (*domain.FamilyTree, error)
 }
 
@@ -91,6 +95,24 @@ func (a *Application) CreatePerson(ctx context.Context, dp domain.Person) (strin
 	return id, nil
 }
 
+// CreatePeople creates multiple persons.
+func (a *Application) CreatePeople(ctx context.Context, people []domain.Person) ([]string, error) {
+	trans := newrelic.FromContext(ctx)
+	if trans != nil {
+		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "CreatePeople")
+		segment := trans.StartSegment(segmentName)
+
+		defer segment.End()
+	}
+
+	personIDs, err := a.repository.CreatePeople(ctx, people)
+	if err != nil {
+		return personIDs, err
+	}
+
+	return personIDs, nil
+}
+
 // UpdatePerson update a person.
 func (a *Application) UpdatePerson(ctx context.Context, dp domain.Person) error {
 	trans := newrelic.FromContext(ctx)
@@ -121,7 +143,7 @@ func (a *Application) DeletePerson(ctx context.Context, id string) error {
 	return err
 }
 
-// CreatePerson create a new person.
+// CreateRelationship create a new relationship.
 func (a *Application) CreateRelationship(ctx context.Context, dr domain.Relationship) (string, error) {
 	trans := newrelic.FromContext(ctx)
 	if trans != nil {
@@ -137,6 +159,64 @@ func (a *Application) CreateRelationship(ctx context.Context, dr domain.Relation
 	}
 
 	return id, nil
+}
+
+// CreateRelationships creates multiple new relationships.
+func (a *Application) CreateRelationships(ctx context.Context, drs []domain.Relationship) ([]string, error) {
+	trans := newrelic.FromContext(ctx)
+	if trans != nil {
+		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "CreateRelationships")
+		segment := trans.StartSegment(segmentName)
+
+		defer segment.End()
+	}
+
+	ids := make([]string, len(drs))
+	for i, dr := range drs {
+		id, err := a.repository.CreateRelationship(ctx, dr)
+		if err != nil {
+			return ids, err
+		}
+		ids[i] = id
+	}
+
+	return ids, nil
+}
+
+// UpdateRelationship updates an existing relationship.
+func (a *Application) UpdateRelationship(ctx context.Context, dr domain.Relationship) error {
+	trans := newrelic.FromContext(ctx)
+	if trans != nil {
+		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "UpdateRelationship")
+		segment := trans.StartSegment(segmentName)
+
+		defer segment.End()
+	}
+
+	err := a.repository.UpdateRelationship(ctx, &dr)
+	if err != nil {
+		return err
+	}
+
+	return nil
+}
+
+// DeleteRelationship deletes a relationship.
+func (a *Application) DeleteRelationship(ctx context.Context, id string) error {
+	trans := newrelic.FromContext(ctx)
+	if trans != nil {
+		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "DeleteRelationship")
+		segment := trans.StartSegment(segmentName)
+
+		defer segment.End()
+	}
+
+	err := a.repository.DeleteRelationship(ctx, id)
+	if err != nil {
+		return err
+	}
+
+	return nil
 }
 
 // BuildFamilyTree return family tree of person.

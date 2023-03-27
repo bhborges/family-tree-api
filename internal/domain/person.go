@@ -7,6 +7,7 @@ import (
 	"gorm.io/gorm"
 )
 
+// Person represents a person or member.
 type Person struct {
 	ID          string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
 	Name        string         `json:"name,omitempty"`
@@ -20,6 +21,7 @@ type Person struct {
 	DeletedAt   gorm.DeletedAt `json:"deletedAt" gorm:"index"`
 }
 
+// Relationship represents a many-to-many relationship between two persons.
 type Relationship struct {
 	ID        string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
 	ParentID  string         `json:"parent_id"`
@@ -29,14 +31,14 @@ type Relationship struct {
 	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"index"`
 }
 
-// Cousins represents the cousin relationship between two persons
+// Cousins represents the cousin relationship between two persons.
 type Cousins struct {
 	Person1 Person   `json:"person1"`
 	Person2 Person   `json:"person2"`
 	Shared  []Person `json:"shared"`
 }
 
-// BaconNumber represents the bacon's number between two persons
+// BaconNumber represents the bacon's number between two persons.
 type BaconNumber struct {
 	Person1   Person `json:"person1"`
 	Person2   Person `json:"person2"`
@@ -46,15 +48,18 @@ type BaconNumber struct {
 	Processed []bool `json:"-"`
 }
 
+// FamilyTree represents a collection of family members.
 type FamilyTree struct {
 	Members []*Member
 }
 
+// Member represents a family member.
 type Member struct {
 	Name          string               `json:"name"`
 	Relationships []FamilyRelationship `json:"relationships"`
 }
 
+// FamilyRelationship represents the relationship between two family members.
 type FamilyRelationship struct {
 	Name         string `json:"name"`
 	Relationship string `json:"relationship"`

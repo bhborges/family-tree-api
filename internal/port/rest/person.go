@@ -84,6 +84,35 @@ func (h *HTTPServer) CreatePerson(w http.ResponseWriter, r *http.Request) {
 	render.PlainText(w, r, id)
 }
 
+func (h *HTTPServer) CreatePeople(w http.ResponseWriter, r *http.Request) {
+	var people []domain.Person
+
+	if err := json.NewDecoder(r.Body).Decode(&people); err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error decoding data", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	var ids []string
+	for _, p := range people {
+		id, err := h.application.CreatePerson(r.Context(), p)
+		if err != nil {
+			newrelic.FromContext(r.Context()).NoticeError(err)
+			h.log.Error("unexpected error creating person from API", zap.Error(err))
+			w.WriteHeader(http.StatusInternalServerError)
+
+			return
+		}
+
+		ids = append(ids, id)
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, ids)
+}
+
 // UpdatePerson update a person.
 func (h *HTTPServer) UpdatePerson(w http.ResponseWriter, r *http.Request) {
 	p := domain.Person{}
@@ -128,6 +157,47 @@ func (h *HTTPServer) DeletePerson(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
+}
+
+func (h *HTTPServer) UpdateRelationship(w http.ResponseWriter, r *http.Request) {
+	dr := domain.Relationship{}
+
+	if err := json.NewDecoder(r.Body).Decode(&dr); err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error decoding data", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	if err := h.application.UpdateRelationship(r.Context(), dr); err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error updating relationship from API", zap.Error(err))
+		if errors.Is(err, app.ErrRelationshipNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (h *HTTPServer) DeleteRelationship(w http.ResponseWriter, r *http.Request) {
+	id := chi.URLParam(r, "id")
+	if err := h.application.DeleteRelationship(r.Context(), id); err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error deleting relationship from API", zap.Error(err))
+		if errors.Is(err, app.ErrRelationshipNotFound) {
+			w.WriteHeader(http.StatusNotFound)
+		} else {
+			w.WriteHeader(http.StatusInternalServerError)
+		}
+		return
+	}
+
+	w.WriteHeader(http.StatusNoContent)
 }
 
 // CreateRelationShip create a new relationship.
