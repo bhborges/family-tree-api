@@ -25,15 +25,6 @@ type PostgresRepository struct {
 	log *zap.Logger
 }
 
-// MyFamilyTree extends the domain FamilyTree structure for adding helper methods.
-type MyFamilyTree struct {
-	*domain.FamilyTree
-}
-
-type Person struct {
-	Name string
-}
-
 // NewPostgresRepository provides a new instance of
 // a PostgreSQL family tree repository.
 func NewPostgresRepository(db *gorm.DB, log *zap.Logger) *PostgresRepository {
@@ -175,100 +166,72 @@ func (pr *PostgresRepository) CreateRelationship(ctx context.Context, dr domain.
 
 // BuildFamilyTree builds the family tree of a given person ID, with the person as the root node.
 func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*domain.FamilyTree, error) {
-	trans := newrelic.FromContext(ctx)
-	if trans != nil {
-		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "ListFamilyTreeByPerson")
-		segment := trans.StartSegment(segmentName)
-
-		defer segment.End()
-	}
-
-	p, err := pr.GetPersonByID(ctx, id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get person with ID %s: %v", id, err)
-	}
-
-	// Create a new family tree with the person as the root node.
-	familyTree := NewFamilyTree(*p)
-
-	// Get all parents of the person.
-	parents, err := pr.getParents(id)
-	if err != nil {
-		return nil, fmt.Errorf("failed to get parents for person with ID %s: %v", id, err)
-	}
-
-	// For each parent, recursively build the family tree.
-	for _, parent := range parents {
-		parentNode, err := pr.BuildFamilyTree(ctx, parent.ID)
-		if err != nil {
-			return nil, fmt.Errorf("failed to build family tree for parent with ID %s: %v", parent.ID, err)
-		}
-
-		myFamilyTree := &MyFamilyTree{familyTree}
-		// Create a new FamilyMember instance with the parent's name.
-		parentMember := domain.FamilyMember{Name: parentNode.Root.Person.Name}
-		// Add the parent node as a child of the root node.
-		myFamilyTree.AddChild(familyTree.Root, parentMember)
-	}
-
-	return familyTree, nil
-}
-
-// FindNodeByName finds a node in the family tree by name.
-func (t *MyFamilyTree) FindNodeByName(name string, node *domain.FamilyTreeNode) (*domain.FamilyTreeNode, error) {
-	if node.Person.Name == name {
-		return node, nil
-	}
-
-	for _, childNode := range node.Children {
-		foundNode, err := t.FindNodeByName(name, childNode)
-		if err == nil {
-			return foundNode, nil
-		}
-	}
-
-	return nil, fmt.Errorf("person with name %s not found in family tree", name)
-}
-
-func (pr *PostgresRepository) getParents(personID string) ([]domain.Person, error) {
-	var parents []domain.Person
-	err := pr.db.Model(&domain.Person{}).Where("id in (select parent_id from relationships where child_id = ?)", personID).Find(&parents).Error
-	if err != nil {
+	var rootPerson domain.Person
+	if err := pr.db.Preload("Parents").Preload("Children").Where("\"id\" = ?", id).First(&rootPerson).Error; err != nil {
 		return nil, err
 	}
-	return parents, nil
+
+	tree := &domain.FamilyTree{
+		Members: []*domain.Member{},
+	}
+
+	peopleMap := make(map[string]*domain.Person)
+
+	peopleMap[rootPerson.ID] = &rootPerson
+
+	childrenQueue := rootPerson.Children
+
+	for len(childrenQueue) > 0 {
+		child := childrenQueue[0]
+		childrenQueue = childrenQueue[1:]
+
+		childPerson := &domain.Person{}
+		if err := pr.db.Preload("Parents").Preload("Children").First(childPerson, child.Children).Error; err != nil {
+			continue
+		}
+
+		peopleMap[childPerson.ID] = childPerson
+
+		relationships := buildFamilyRelationships(childPerson, peopleMap)
+
+		member := &domain.Member{
+			Name:          childPerson.Name,
+			Relationships: relationships,
+		}
+		tree.Members = append(tree.Members, member)
+
+		childrenQueue = append(childrenQueue, childPerson.Children...)
+	}
+
+	return tree, nil
 }
 
-func (t *MyFamilyTree) AddChild(parentNode *domain.FamilyTreeNode, childPerson domain.FamilyMember) error {
-	// create a new node with the child person data
-	childNode := &domain.FamilyTreeNode{
-		Person: domain.Person{
-			Name: childPerson.Name,
-		},
+// buildFamilyRelationships creates family relationships for a given person and returns them as a slice.
+// It takes a map of people with person IDs as keys for efficient lookups.
+func buildFamilyRelationships(person *domain.Person, peopleMap map[string]*domain.Person) []domain.FamilyRelationship {
+	var relationships []domain.FamilyRelationship
+
+	for _, parent := range person.Parents {
+		parentPerson := peopleMap[parent.ID]
+		if parentPerson != nil {
+			relationship := domain.FamilyRelationship{
+				Name:         parentPerson.Name,
+				Relationship: "Parent",
+			}
+			relationships = append(relationships, relationship)
+		}
 	}
 
-	// check if parent node exists
-	if parentNode == nil {
-		return errors.New("parent node is nil")
+	for _, child := range person.Children {
+		childPerson := peopleMap[child.ID]
+		if childPerson != nil {
+			relationship := domain.FamilyRelationship{
+				Name:         childPerson.Name,
+				Relationship: "Child",
+			}
+			relationships = append(relationships, relationship)
+		}
 	}
 
-	// add child node to parent node's children
-	parentNode.Children = append(parentNode.Children, childNode)
-
-	return nil
-}
-
-func (m Person) ToFamilyMember() domain.FamilyMember {
-	return domain.FamilyMember{
-		Name: m.Name,
-	}
-}
-
-// NewFamilyTree creates a new family tree with the given person as the root node.
-func NewFamilyTree(person domain.Person) *domain.FamilyTree {
-	return &domain.FamilyTree{
-		Root: &domain.FamilyTreeNode{
-			Person: person,
-		},
-	}
+	return relationships
 }

@@ -10,10 +10,10 @@ import (
 type Person struct {
 	ID          string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
 	Name        string         `json:"name,omitempty"`
-	Parents     []Relationship `json:"parents,omitempty" gorm:"foreignKey:ParentID;references:ID;-"`
-	Children    []Relationship `json:"children,omitempty" gorm:"foreignKey:ChildrenID;references:ID;-"`
-	Siblings    []Relationship `json:"siblings,omitempty" gorm:"-"`
-	Spouse      *Relationship  `json:"spouse,omitempty" gorm:"-"`
+	Parents     []*Person      `json:"parents,omitempty" gorm:"many2many:relationships;foreignKey:ID;joinForeignKey:ParentID"`
+	Children    []*Person      `json:"children,omitempty" gorm:"many2many:relationships;foreignKey:ID;joinForeignKey:ChildID"`
+	Siblings    []*Person      `json:"siblings,omitempty" gorm:"-"`
+	Spouse      *Person        `json:"spouse,omitempty" gorm:"-"`
 	BaconNumber int            `json:"bacon_number,omitempty" gorm:"-"`
 	CreatedAt   *time.Time     `json:"createdAt"`
 	UpdatedAt   *time.Time     `json:"updatedAt"`
@@ -22,8 +22,8 @@ type Person struct {
 
 type Relationship struct {
 	ID        string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
-	ParentID  string         `json:"parent"`
-	ChildID   string         `json:"children"`
+	ParentID  string         `json:"parent_id"`
+	ChildID   string         `json:"child_id"`
 	CreatedAt *time.Time     `json:"createdAt"`
 	UpdatedAt *time.Time     `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"index"`
