@@ -23,10 +23,13 @@ type HTTPServer struct {
 
 // Application specifies the signature of Application.
 type Application interface {
+	ListPeople(context.Context) ([]*domain.Person, error)
 	GetPersonByID(context.Context, string) (*domain.Person, error)
 	CreatePerson(context.Context, domain.Person) (string, error)
-	UpdatePerson(context.Context, domain.Person) (error)
-	DeletePerson(context.Context, string) (error)
+	UpdatePerson(context.Context, domain.Person) error
+	DeletePerson(context.Context, string) error
+	CreateRelationship(context.Context, domain.Relationship) (string, error)
+	BuildFamilyTree(ctx context.Context, id string) (*domain.FamilyTree, error)
 }
 
 // ProvideHTTPServer returns a new instance of an HTTP server.
@@ -47,10 +50,14 @@ func ProvideHTTPServer(
 func RegisterHandlers(h *HTTPServer) {
 	h.router.Route("/familytree", func(r chi.Router) {
 		r.Route("/person", func(r chi.Router) {
-			r.Get("/{id}", http.WithAPM(h.apm, "/{id}", h.GetPersonByID))
+			r.Get("/", http.WithAPM(h.apm, "/", h.ListPeople))
+			r.Get("/{id}", http.WithAPM(h.apm, "/{id}", h.BuildFamilyTree))
 			r.Post("/", http.WithAPM(h.apm, "/", h.CreatePerson))
 			r.Patch("/", http.WithAPM(h.apm, "/", h.UpdatePerson))
 			r.Delete("/{id}", http.WithAPM(h.apm, "/{id}", h.DeletePerson))
+		})
+		r.Route("/relationship", func(r chi.Router) {
+			r.Post("/", http.WithAPM(h.apm, "/", h.CreateRelationship))
 		})
 	})
 }
