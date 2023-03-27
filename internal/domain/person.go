@@ -46,17 +46,11 @@ type BaconNumber struct {
 	Processed []bool `json:"-"`
 }
 
-type FamilyTreeNode struct {
-	Person   Person
-	Children []*FamilyTreeNode
-	Parent   *FamilyTreeNode
-}
-
 type FamilyTree struct {
-	Root *FamilyTreeNode
+	Members []*Member
 }
 
-type FamilyMember struct {
+type Member struct {
 	Name          string               `json:"name"`
 	Relationships []FamilyRelationship `json:"relationships"`
 }
