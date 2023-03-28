@@ -1,9 +1,9 @@
-// Package rest implements an HTTP server.
 package rest
 
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 
 	"github.com/bhborges/family-tree-api/internal/app"
@@ -29,11 +29,13 @@ func (h *HTTPServer) UpdateRelationship(w http.ResponseWriter, r *http.Request) 
 	if err := h.application.UpdateRelationship(r.Context(), dr); err != nil {
 		newrelic.FromContext(r.Context()).NoticeError(err)
 		h.log.Error("unexpected error updating relationship from API", zap.Error(err))
+
 		if errors.Is(err, app.ErrRelationshipNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+
 		return
 	}
 
@@ -46,18 +48,20 @@ func (h *HTTPServer) DeleteRelationship(w http.ResponseWriter, r *http.Request) 
 	if err := h.application.DeleteRelationship(r.Context(), id); err != nil {
 		newrelic.FromContext(r.Context()).NoticeError(err)
 		h.log.Error("unexpected error deleting relationship from API", zap.Error(err))
+
 		if errors.Is(err, app.ErrRelationshipNotFound) {
 			w.WriteHeader(http.StatusNotFound)
 		} else {
 			w.WriteHeader(http.StatusInternalServerError)
 		}
+
 		return
 	}
 
 	w.WriteHeader(http.StatusNoContent)
 }
 
-// CreateRelationShip create a new relationship.
+// CreateRelationship create a new relationship.
 func (h *HTTPServer) CreateRelationship(w http.ResponseWriter, r *http.Request) {
 	dr := domain.Relationship{}
 
@@ -70,6 +74,12 @@ func (h *HTTPServer) CreateRelationship(w http.ResponseWriter, r *http.Request) 
 	}
 
 	id, err := h.application.CreateRelationship(r.Context(), dr)
+
+	if errors.Is(err, app.ErrIncestuousOffspring) {
+		render.Status(r, http.StatusUnprocessableEntity)
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrIncestuousOffspring))
+	}
+
 	if err != nil {
 		newrelic.FromContext(r.Context()).NoticeError(err)
 		h.log.Error("unexpected error creating relationship from API", zap.Error(err))

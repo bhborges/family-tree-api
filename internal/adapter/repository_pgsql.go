@@ -1,4 +1,4 @@
-// Package adapters implements all the necessary
+// Package adapter implements all the necessary
 // logic to talk to any external system.
 package adapter
 

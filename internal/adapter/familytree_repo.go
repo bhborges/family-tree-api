@@ -1,5 +1,3 @@
-// Package adapters implements all the necessary
-// logic to talk to any external system.
 package adapter
 
 import (
@@ -33,8 +31,13 @@ const qBuildFamilyTreeByPerson = `
 // BuildFamilyTree builds the family tree of a given person ID, with the person as the root node.
 func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*domain.FamilyTree, error) {
 	q := pr.db.Raw(qBuildFamilyTreeByPerson, id, id)
+
 	rows, err := q.Rows()
 	if err != nil {
+		return nil, err
+	}
+
+	if rows.Err() != nil {
 		return nil, err
 	}
 	defer rows.Close()
@@ -43,11 +46,14 @@ func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*
 
 	for rows.Next() {
 		var name string
+
 		var parent string
+
 		err := rows.Scan(&name, &parent)
 		if err != nil {
 			return nil, err
 		}
+
 		if parent != "" {
 			if _, ok := rs[name]; !ok {
 				rs[name] = []string{parent}
@@ -59,11 +65,13 @@ func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*
 
 	// create members slice and populate it with Member structs
 	ms := make([]*domain.Member, 0)
+
 	for name, parentList := range rs {
 		m := &domain.Member{Name: name, Relationships: make([]domain.FamilyRelationship, len(parentList))}
 		for i, parent := range parentList {
 			m.Relationships[i] = domain.FamilyRelationship{Name: parent, Relationship: "parent"}
 		}
+
 		ms = append(ms, m)
 	}
 

@@ -1,5 +1,3 @@
-// Package adapters implements all the necessary
-// logic to talk to any external system.
 package adapter
 
 import (
@@ -39,7 +37,7 @@ func (pr *PostgresRepository) ListPeople(ctx context.Context) (
 	return p, err
 }
 
-// GetPerson returns a person registered.
+// GetPersonByID returns a person registered.
 // Filtered by ID.
 func (pr *PostgresRepository) GetPersonByID(ctx context.Context, id string) (*domain.Person, error) {
 	trans := newrelic.FromContext(ctx)
@@ -100,12 +98,14 @@ func (pr *PostgresRepository) CreatePeople(ctx context.Context, people []domain.
 		defer segment.End()
 	}
 
-	var ids []string
+	ids := make([]string, 0, len(people))
+
 	for _, p := range people {
 		id, err := pr.CreatePerson(ctx, p)
 		if err != nil {
 			return nil, err
 		}
+
 		ids = append(ids, id)
 	}
 

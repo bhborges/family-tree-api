@@ -20,6 +20,10 @@ import (
 
 const timeout = 60
 
+type key string
+
+const formatKey key = "format"
+
 // RestConfig holds all necessary configuration to run module rest.
 type RestConfig struct {
 	CorsAllowedOrigins  []string `split_words:"true" required:"false" default:"*"`
@@ -96,6 +100,29 @@ func ServePlainHTTP(lc fx.Lifecycle, handler *chi.Mux, logger *zap.Logger, liste
 // of each request, which makes use of uber/zap package.
 func logMiddleware(logger *zap.Logger) func(next http.Handler) http.Handler {
 	return middleware.RequestLogger(&loggerRequest{log: logger})
+}
+
+func FormatMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		accept := r.Header.Get("Accept")
+		ctx := context.WithValue(r.Context(), formatKey, accept)
+		next.ServeHTTP(w, r.WithContext(ctx))
+	})
+}
+
+func SetContentTypeMiddleware(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		format := r.Context().Value("format")
+		switch format {
+		case "application/xml":
+			w.Header().Set("Content-Type", "application/xml")
+		case "application/octet-stream":
+			w.Header().Set("Content-Type", "application/octet-stream")
+		default:
+			w.Header().Set("Content-Type", "application/json")
+		}
+		next.ServeHTTP(w, r)
+	})
 }
 
 // loggerRequest implements middleware.LogFormatter interface.

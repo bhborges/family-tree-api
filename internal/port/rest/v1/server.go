@@ -53,6 +53,8 @@ func ProvideHTTPServer(
 // RegisterHandlers registers all handlers.
 func RegisterHandlers(h *HTTPServer) {
 	h.router.Route("/familytree", func(r chi.Router) {
+		r.Use(http.FormatMiddleware)
+		r.Use(http.SetContentTypeMiddleware)
 		r.Route("/person", func(r chi.Router) {
 			r.Get("/", http.WithAPM(h.apm, "/", h.ListPeople))
 			r.Get("/{id}", http.WithAPM(h.apm, "/{id}", h.BuildFamilyTree))

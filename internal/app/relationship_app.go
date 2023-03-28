@@ -1,4 +1,3 @@
-// Package app holds the business logic.
 package app
 
 import (
@@ -39,11 +38,13 @@ func (a *Application) CreateRelationships(ctx context.Context, drs []domain.Rela
 	}
 
 	ids := make([]string, len(drs))
+
 	for i, dr := range drs {
 		id, err := a.repository.CreateRelationship(ctx, dr)
 		if err != nil {
 			return ids, err
 		}
+
 		ids[i] = id
 	}
 
