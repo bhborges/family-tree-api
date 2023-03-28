@@ -9,10 +9,10 @@ import (
 
 // Person represents a person or member.
 type Person struct {
-	ID          string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
+	ID          string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	Name        string         `json:"name,omitempty"`
-	Parents     []*Person      `json:"parents,omitempty" gorm:"many2many:relationships;foreignKey:ID;joinForeignKey:ParentID"`
-	Children    []*Person      `json:"children,omitempty" gorm:"many2many:relationships;foreignKey:ID;joinForeignKey:ChildID"`
+	Parents     []*Person      `json:"parents,omitempty" gorm:"many2many:relationships;ForeignKey:ID;References:parent_id"`
+	Children    []*Person      `json:"children,omitempty" gorm:"many2many:relationships;ForeignKey:ID;References:child_id"`
 	Siblings    []*Person      `json:"siblings,omitempty" gorm:"-"`
 	Spouse      *Person        `json:"spouse,omitempty" gorm:"-"`
 	BaconNumber int            `json:"bacon_number,omitempty" gorm:"-"`
@@ -23,9 +23,9 @@ type Person struct {
 
 // Relationship represents a many-to-many relationship between two persons.
 type Relationship struct {
-	ID        string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primary_key"`
-	ParentID  string         `json:"parent_id"`
-	ChildID   string         `json:"child_id"`
+	ID        string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
+	ParentID  string         `json:"parent" gorm:"primaryKey"`
+	ChildID   string         `json:"children" gorm:"primaryKey"`
 	CreatedAt *time.Time     `json:"createdAt"`
 	UpdatedAt *time.Time     `json:"updatedAt"`
 	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"index"`

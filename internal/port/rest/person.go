@@ -225,6 +225,30 @@ func (h *HTTPServer) CreateRelationship(w http.ResponseWriter, r *http.Request) 
 	render.PlainText(w, r, id)
 }
 
+func (h *HTTPServer) CreateRelationships(w http.ResponseWriter, r *http.Request) {
+	drs := []domain.Relationship{}
+
+	if err := json.NewDecoder(r.Body).Decode(&drs); err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error decoding data", zap.Error(err))
+		w.WriteHeader(http.StatusBadRequest)
+
+		return
+	}
+
+	ids, err := h.application.CreateRelationships(r.Context(), drs)
+	if err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error creating relationships from API", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	render.Status(r, http.StatusCreated)
+	render.JSON(w, r, ids)
+}
+
 // ListPeople returns a list of people.
 func (h *HTTPServer) BuildFamilyTree(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")

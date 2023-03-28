@@ -68,5 +68,8 @@ func RegisterHandlers(h *HTTPServer) {
 			r.Put("/{id}", http.WithAPM(h.apm, "/{id}", h.UpdateRelationship))
 			r.Delete("/{id}", http.WithAPM(h.apm, "/{id}", h.DeleteRelationship))
 		})
+		r.Route("/relationships", func(r chi.Router) {
+			r.Post("/", http.WithAPM(h.apm, "/", h.CreateRelationships))
+		})
 	})
 }

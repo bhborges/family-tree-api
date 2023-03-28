@@ -263,79 +263,62 @@ func (pr *PostgresRepository) DeleteRelationship(ctx context.Context, id string)
 
 // BuildFamilyTree builds the family tree of a given person ID, with the person as the root node.
 func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*domain.FamilyTree, error) {
-	var rootPerson domain.Person
-
-	if err := pr.db.Debug().
-		Joins("JOIN relationships ON relationships.child_id = people.id").
-		Preload("Parents").
-		Preload("Children").
-		Where("relationships.parent_id = ?", id).
-		Find(&rootPerson.Children).
-		Error; err != nil {
+	q := pr.db.Debug().Raw(`
+		WITH RECURSIVE family_tree AS (
+			SELECT id, parent_id, child_id
+			FROM relationships
+			WHERE child_id = ?
+			UNION ALL
+			SELECT r.id, r.parent_id, r.child_id
+			FROM relationships r
+			JOIN family_tree ft ON r.child_id = ft.parent_id
+		)
+		SELECT DISTINCT p.name as name, COALESCE(p2.name, '') as parent
+		FROM family_tree ft
+		JOIN people p ON ft.parent_id = p.id
+		LEFT JOIN relationships r ON r.child_id = p.id
+		LEFT JOIN people p2 ON r.parent_id = p2.id
+		UNION ALL
+		SELECT DISTINCT p.name as name, COALESCE(p2.name, '') as parent
+		FROM people p
+		LEFT JOIN relationships r ON r.child_id = p.id
+		LEFT JOIN people p2 ON r.parent_id = p2.id
+		WHERE p.id = ?`, id, id)
+	rows, err := q.Rows()
+	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 
-	tree := &domain.FamilyTree{
-		Members: []*domain.Member{},
-	}
+	r := make(map[string][]string)
 
-	peopleMap := make(map[string]*domain.Person)
-
-	peopleMap[rootPerson.ID] = &rootPerson
-
-	childrenQueue := rootPerson.Children
-
-	for len(childrenQueue) > 0 {
-		child := childrenQueue[0]
-		childrenQueue = childrenQueue[1:]
-
-		childPerson := &domain.Person{}
-		if err := pr.db.Preload("Parents").Preload("Children").First(childPerson, child.Children).Error; err != nil {
-			continue
+	for rows.Next() {
+		var name string
+		var parent string
+		err := rows.Scan(&name, &parent)
+		if err != nil {
+			return nil, err
 		}
-
-		peopleMap[childPerson.ID] = childPerson
-
-		relationships := buildFamilyRelationships(childPerson, peopleMap)
-
-		member := &domain.Member{
-			Name:          childPerson.Name,
-			Relationships: relationships,
-		}
-		tree.Members = append(tree.Members, member)
-
-		childrenQueue = append(childrenQueue, childPerson.Children...)
-	}
-
-	return tree, nil
-}
-
-// buildFamilyRelationships creates family relationships for a given person and returns them as a slice.
-// It takes a map of people with person IDs as keys for efficient lookups.
-func buildFamilyRelationships(person *domain.Person, peopleMap map[string]*domain.Person) []domain.FamilyRelationship {
-	var relationships []domain.FamilyRelationship
-
-	for _, parent := range person.Parents {
-		parentPerson := peopleMap[parent.ID]
-		if parentPerson != nil {
-			relationship := domain.FamilyRelationship{
-				Name:         parentPerson.Name,
-				Relationship: "Parent",
+		if parent != "" {
+			if _, ok := r[name]; !ok {
+				r[name] = []string{parent}
+			} else {
+				r[name] = append(r[name], parent)
 			}
-			relationships = append(relationships, relationship)
 		}
 	}
 
-	for _, child := range person.Children {
-		childPerson := peopleMap[child.ID]
-		if childPerson != nil {
-			relationship := domain.FamilyRelationship{
-				Name:         childPerson.Name,
-				Relationship: "Child",
-			}
-			relationships = append(relationships, relationship)
+	ms := make([]*domain.Member, 0)
+	for name, parentList := range r {
+		m := &domain.Member{Name: name}
+		fr := make([]domain.FamilyRelationship, 0)
+		for _, parent := range parentList {
+			r := domain.FamilyRelationship{Name: parent, Relationship: "parent"}
+			fr = append(fr, r)
 		}
+		m.Relationships = fr
+		ms = append(ms, m)
 	}
 
-	return relationships
+	return &domain.FamilyTree{Members: ms}, nil
 }
