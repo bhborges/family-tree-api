@@ -11,11 +11,11 @@ import (
 type Person struct {
 	ID          string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	Name        string         `json:"name,omitempty"`
-	Parents     []*Person      `json:"parents,omitempty" gorm:"many2many:relationships;ForeignKey:ID;References:parent_id"`
-	Children    []*Person      `json:"children,omitempty" gorm:"many2many:relationships;ForeignKey:ID;References:child_id"`
+	Parents     []*Person      `json:"parents,omitempty" gorm:"many2many:relationships;ForeignKey:ID;References:id"`
+	Children    []*Person      `json:"children,omitempty" gorm:"many2many:relationships;ForeignKey:ID;References:id"`
 	Siblings    []*Person      `json:"siblings,omitempty" gorm:"-"`
 	Spouse      *Person        `json:"spouse,omitempty" gorm:"-"`
-	BaconNumber int            `json:"bacon_number,omitempty" gorm:"-"`
+	BaconNumber int            `json:"baconNumber,omitempty" gorm:"-"`
 	CreatedAt   *time.Time     `json:"createdAt"`
 	UpdatedAt   *time.Time     `json:"updatedAt"`
 	DeletedAt   gorm.DeletedAt `json:"deletedAt" gorm:"index"`

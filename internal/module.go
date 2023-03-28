@@ -1,10 +1,10 @@
-// Package family tree holds all modules related to it.
+// Package familytree holds all modules related to it.
 package familytree
 
 import (
 	"github.com/bhborges/family-tree-api/internal/adapter"
 	"github.com/bhborges/family-tree-api/internal/app"
-	"github.com/bhborges/family-tree-api/internal/port/rest"
+	"github.com/bhborges/family-tree-api/internal/port/rest/v1"
 
 	"go.uber.org/fx"
 )

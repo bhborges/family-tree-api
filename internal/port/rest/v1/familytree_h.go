@@ -1,7 +1,7 @@
-// Package rest implements an HTTP server.
 package rest
 
 import (
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -13,7 +13,7 @@ import (
 	"go.uber.org/zap"
 )
 
-// ListPeople returns a list of people.
+// BuildFamilyTree returns a family tree.
 func (h *HTTPServer) BuildFamilyTree(w http.ResponseWriter, r *http.Request) {
 	id := chi.URLParam(r, "id")
 
@@ -21,7 +21,7 @@ func (h *HTTPServer) BuildFamilyTree(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, app.ErrPersonNotFound) {
 		render.Status(r, http.StatusNotFound)
-		render.PlainText(w, r, fmt.Sprintf("%x", app.ErrPersonNotFound))
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrPersonNotFound))
 	}
 
 	if err != nil {
@@ -33,5 +33,14 @@ func (h *HTTPServer) BuildFamilyTree(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, t)
+
+	switch r.Header.Get("Accept") {
+	case "application/xml":
+		render.XML(w, r, t)
+	case "application/octet-stream":
+		bytes, _ := json.Marshal(t)
+		render.Data(w, r, bytes)
+	default:
+		render.JSON(w, r, t)
+	}
 }

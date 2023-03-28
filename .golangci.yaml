@@ -1,0 +1,122 @@
+# More details about configuration:
+# https://golangci-lint.run/usage/configuration
+run:
+  timeout: 5m
+
+linters-settings:
+  gocyclo:
+    min-complexity: 10
+  golint:
+    min-confidence: 0
+  misspell:
+    locale: US
+  lll:
+    line-length: 140
+  depguard:
+    list-type: blacklist
+    include-go-root: true
+    packages:
+      - log
+    packages-with-error-message:
+      - log: 'please keep logging unified using only go.uber.org/zap'
+  godot:
+    scope: declarations
+    capital: true
+  gosec:
+    excludes:
+      - G101 # Look for hard coded credentials
+      - G104 # G104 is caught by errcheck
+  staticcheck:
+    checks: ["all", "-SA5001"]
+  errcheck:
+    exclude-functions:
+      - (*go.uber.org/zap.Logger).Sync
+      - (*database/sql.Rows).Close
+      - github.com/go-chi/render.Render
+
+linters:
+  disable-all: true
+  enable:
+    # List of enabled-by-default linters that we explicitly opt in.
+    - errcheck
+    - gosimple
+    - govet
+    - ineffassign
+    - staticcheck
+    - typecheck
+    - unused
+
+    # List of disabled-by-default linters that we explicitly opt in.
+    - asciicheck
+    - bodyclose
+    - cyclop
+    - depguard
+    - dogsled
+    - dupl
+    - durationcheck
+    - errorlint
+    - exhaustive
+    # This linter is meant to be used only for special cases.
+    # It is not recommended using it for all files in a project.
+    # - exhaustivestruct
+    - exportloopref
+    - forbidigo
+    - forcetypeassert
+    - nolintlint
+    # - funlen
+    - gochecknoglobals
+    - gochecknoinits
+    - gocognit
+    - goconst
+    - gocritic
+    - gocyclo
+    - godot
+    - godox
+    - goerr113
+    - gofmt
+    - gofumpt
+    - goheader
+    - goimports
+    - gomnd
+    - gomodguard
+    - goprintffuncname
+    - gosec
+    - importas
+    - lll
+    - makezero
+    - misspell
+    - nakedret
+    - nestif
+    - nilerr
+    - nlreturn
+    - noctx
+    - prealloc
+    - predeclared
+    - rowserrcheck
+    - sqlclosecheck
+    - stylecheck
+    - tagliatelle
+    - thelper
+    - tparallel
+    - unconvert
+    - unparam
+    - wastedassign
+    - whitespace
+    - wsl
+
+issues:
+  exclude-use-default: false
+  exclude-rules:
+    - path: _test\.go
+      linters:
+        - gosec
+        - gochecknoglobals
+        - errcheck
+        - funlen
+        - dupl
+    - path: pkg/version/
+      linters:
+        - gochecknoglobals
+    - path: internal/user/modules.go
+      linters:
+        - funlen

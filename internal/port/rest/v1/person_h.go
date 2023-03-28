@@ -1,4 +1,3 @@
-// Package rest implements an HTTP server.
 package rest
 
 import (
@@ -21,7 +20,7 @@ func (h *HTTPServer) ListPeople(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, app.ErrPersonNotFound) {
 		render.Status(r, http.StatusNotFound)
-		render.PlainText(w, r, fmt.Sprintf("%x", app.ErrPersonNotFound))
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrPersonNotFound))
 	}
 
 	if err != nil {
@@ -33,7 +32,15 @@ func (h *HTTPServer) ListPeople(w http.ResponseWriter, r *http.Request) {
 	}
 
 	render.Status(r, http.StatusOK)
-	render.JSON(w, r, p)
+
+	switch r.Header.Get("Accept") {
+	case "application/xml":
+		render.XML(w, r, p)
+	case "application/json":
+		render.JSON(w, r, p)
+	default:
+		render.Data(w, r, []byte("unsupported media type"))
+	}
 }
 
 // GetPersonByID returns a person.
@@ -44,7 +51,7 @@ func (h *HTTPServer) GetPersonByID(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, app.ErrPersonNotFound) {
 		render.Status(r, http.StatusNotFound)
-		render.PlainText(w, r, fmt.Sprintf("%x", app.ErrPersonNotFound))
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrPersonNotFound))
 	}
 
 	if err != nil {
@@ -84,6 +91,7 @@ func (h *HTTPServer) CreatePerson(w http.ResponseWriter, r *http.Request) {
 	render.PlainText(w, r, id)
 }
 
+// CreatePeople creates a new batch of people.
 func (h *HTTPServer) CreatePeople(w http.ResponseWriter, r *http.Request) {
 	var people []domain.Person
 
@@ -95,7 +103,8 @@ func (h *HTTPServer) CreatePeople(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var ids []string
+	ids := make([]string, 0, len(people))
+
 	for _, p := range people {
 		id, err := h.application.CreatePerson(r.Context(), p)
 		if err != nil {
@@ -145,7 +154,7 @@ func (h *HTTPServer) DeletePerson(w http.ResponseWriter, r *http.Request) {
 
 	if errors.Is(err, app.ErrPersonNotFound) {
 		render.Status(r, http.StatusNotFound)
-		render.PlainText(w, r, fmt.Sprintf("%x", app.ErrPersonNotFound))
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrPersonNotFound))
 	}
 
 	if err != nil {
