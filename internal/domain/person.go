@@ -50,7 +50,7 @@ type BaconNumber struct {
 
 // FamilyTree represents a collection of family members.
 type FamilyTree struct {
-	Members []*Member
+	Members []*Member `json:"members"`
 }
 
 // Member represents a family member.
