@@ -32,4 +32,4 @@ make run
 
 ## :orange_book: Docs API Reference
 
-API documentation is [here](https://github.com/bhborges/family-tree-api/docs/openapi.yml) in openApi 3.0.2
+API documentation is [here](https://github.com/bhborges/family-tree-api/blob/main/docs/openapi.yml) in openApi 3.0.2
