@@ -36,10 +36,11 @@ func (h *HTTPServer) ListPeople(w http.ResponseWriter, r *http.Request) {
 	switch r.Header.Get("Accept") {
 	case "application/xml":
 		render.XML(w, r, p)
-	case "application/json":
-		render.JSON(w, r, p)
+	case "application/octet-stream":
+		bytes, _ := json.Marshal(p)
+		render.Data(w, r, bytes)
 	default:
-		render.Data(w, r, []byte("unsupported media type"))
+		render.JSON(w, r, p)
 	}
 }
 

@@ -27,7 +27,6 @@ type Repository interface {
 	UpdatePerson(context.Context, domain.Person) error
 	DeletePerson(context.Context, string) error
 	CreateRelationship(context.Context, domain.Relationship) (string, error)
-	CreateRelationships(context.Context, []domain.Relationship) ([]string, error)
 	UpdateRelationship(context.Context, *domain.Relationship) error
 	DeleteRelationship(context.Context, string) error
 	BuildFamilyTree(context.Context, string) (*domain.FamilyTree, error)

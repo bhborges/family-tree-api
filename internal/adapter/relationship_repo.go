@@ -44,39 +44,6 @@ func (pr *PostgresRepository) CreateRelationship(ctx context.Context, dr domain.
 	return r.ID, nil
 }
 
-// CreateRelationships create a new relationship.
-// No use CheckIncestuousOffspring.
-func (pr *PostgresRepository) CreateRelationships(ctx context.Context, relationships []domain.Relationship) ([]string, error) {
-	trans := newrelic.FromContext(ctx)
-	if trans != nil {
-		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "CreateRelationships")
-		segment := trans.StartSegment(segmentName)
-
-		defer segment.End()
-	}
-
-	tx := pr.db.Begin()
-	ids := make([]string, len(relationships))
-
-	for i, r := range relationships {
-		if err := tx.Create(r).Error; err != nil {
-			tx.Rollback()
-
-			return ids, err
-		}
-
-		ids[i] = r.ID
-	}
-
-	if err := tx.Commit().Error; err != nil {
-		tx.Rollback()
-
-		return ids, err
-	}
-
-	return ids, nil
-}
-
 func (pr *PostgresRepository) UpdateRelationship(ctx context.Context, dr *domain.Relationship) error {
 	trans := newrelic.FromContext(ctx)
 	if trans != nil {
@@ -179,7 +146,7 @@ func (pr *PostgresRepository) listRelationshipsByParentAndChildIDs(parentID, chi
 	return rs, nil
 }
 
-// fix: complex
+// fix:
 // CheckIncestuousOffspring checks if there are any incestuous relationships in a given slice.
 func (pr *PostgresRepository) checkIncestuousOffspring(relationships []*domain.Relationship) bool {
 	for i, r1 := range relationships {

@@ -105,6 +105,11 @@ func (h *HTTPServer) CreateRelationships(w http.ResponseWriter, r *http.Request)
 	}
 
 	ids, err := h.application.CreateRelationships(r.Context(), drs)
+	if errors.Is(err, app.ErrIncestuousOffspring) {
+		render.Status(r, http.StatusUnprocessableEntity)
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrIncestuousOffspring))
+	}
+
 	if err != nil {
 		newrelic.FromContext(r.Context()).NoticeError(err)
 		h.log.Error("unexpected error creating relationships from API", zap.Error(err))
