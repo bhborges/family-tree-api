@@ -16,13 +16,20 @@ These are some dependencies used in this repository:
 
 ## :arrow_forward: Running
 
-### Local:
+### Local
 
 start docker compose:
-```
+
+```bash
 docker compose up
 ```
+
 run project and env's with make run:
-```
+
+```bash
 make run
 ```
+
+## :orange_book: Docs API Reference
+
+API documentation is [here](https://github.com/bhborges/family-tree-api/docs/openapi.yml) in openApi 3.0.2

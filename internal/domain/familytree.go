@@ -18,7 +18,7 @@ type Person struct {
 	BaconNumber int            `json:"baconNumber,omitempty" gorm:"-"`
 	CreatedAt   *time.Time     `json:"createdAt"`
 	UpdatedAt   *time.Time     `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `json:"deletedAt" gorm:"index"`
+	DeletedAt   gorm.DeletedAt `json:"deletedAt" gorm:"index;-"`
 }
 
 // Relationship represents a many-to-many relationship between two persons.
@@ -28,7 +28,7 @@ type Relationship struct {
 	ChildID   string         `json:"children" gorm:"primaryKey"`
 	CreatedAt *time.Time     `json:"createdAt"`
 	UpdatedAt *time.Time     `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"index"`
+	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"index;-"`
 }
 
 // Cousins represents the cousin relationship between two persons.
