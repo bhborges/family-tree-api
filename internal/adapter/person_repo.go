@@ -27,7 +27,6 @@ func (pr *PostgresRepository) ListPeople(ctx context.Context) (
 	var p []*domain.Person
 
 	tx := pr.db.WithContext(ctx)
-	tx.Where("deleted_at IS NULL")
 
 	err := tx.Find(&p).Error
 	if err != nil {

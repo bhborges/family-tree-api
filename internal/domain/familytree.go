@@ -1,12 +1,6 @@
 // Package domain holds all domain related code.
 package domain
 
-import (
-	"time"
-
-	"gorm.io/gorm"
-)
-
 // Person represents a person or member.
 type Person struct {
 	ID          string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
@@ -16,9 +10,6 @@ type Person struct {
 	Siblings    []*Person      `json:"siblings,omitempty" gorm:"-"`
 	Spouse      *Person        `json:"spouse,omitempty" gorm:"-"`
 	BaconNumber int            `json:"baconNumber,omitempty" gorm:"-"`
-	CreatedAt   *time.Time     `json:"createdAt"`
-	UpdatedAt   *time.Time     `json:"updatedAt"`
-	DeletedAt   gorm.DeletedAt `json:"deletedAt" gorm:"index;-"`
 }
 
 // Relationship represents a many-to-many relationship between two persons.
@@ -26,9 +17,6 @@ type Relationship struct {
 	ID        string         `json:"id" gorm:"type:uuid;default:uuid_generate_v4();primaryKey"`
 	ParentID  string         `json:"parent" gorm:"primaryKey"`
 	ChildID   string         `json:"children" gorm:"primaryKey"`
-	CreatedAt *time.Time     `json:"createdAt"`
-	UpdatedAt *time.Time     `json:"updatedAt"`
-	DeletedAt gorm.DeletedAt `json:"deletedAt" gorm:"index;-"`
 }
 
 // Cousins represents the cousin relationship between two persons.
