@@ -146,36 +146,33 @@ func (pr *PostgresRepository) listRelationshipsByParentAndChildIDs(parentID, chi
 	return rs, nil
 }
 
-// fix:
 // CheckIncestuousOffspring checks if there are any incestuous relationships in a given slice.
 func (pr *PostgresRepository) checkIncestuousOffspring(relationships []*domain.Relationship) bool {
-	for i, r1 := range relationships {
-		for _, r2 := range relationships[i+1:] {
-			if (r1.ParentID == r2.ParentID && r1.ChildID == r2.ChildID) || (r1.ParentID == r2.ChildID && r1.ChildID == r2.ParentID) {
-				return true
-			} else {
-				p1, err := pr.listParentsByID(r1.ParentID)
-				if err != nil {
-					pr.log.Error(fmt.Sprintf("Error while getting parents for ID: %s", r1.ParentID), zap.Error(err))
-
-					return false
-				}
-				p2, err := pr.listParentsByID(r2.ParentID)
-				if err != nil {
-					pr.log.Error(fmt.Sprintf("Error while getting parents for ID: %s", r2.ParentID), zap.Error(err))
-
-					return false
-				}
-				for _, pp1 := range p1 {
-					for _, pp2 := range p2 {
-						if pp1.ID == pp2.ID {
-							return true
-						}
-					}
-				}
-			}
-		}
-	}
-
-	return false
+    for i, r1 := range relationships {
+        for _, r2 := range relationships[i+1:] {
+            if (r1.ParentID == r2.ParentID && r1.ChildID == r2.ChildID) || (r1.ParentID == r2.ChildID && r1.ChildID == r2.ParentID) {
+                return true
+            } else if r1.ParentID != r2.ParentID {
+                // Only list parents if there's a potential incestuous relationship
+                p1, err := pr.listParentsByID(r1.ParentID)
+                if err != nil {
+                    pr.log.Error(fmt.Sprintf("Error while getting parents for ID: %s", r1.ParentID), zap.Error(err))
+                    return false
+                }
+                p2, err := pr.listParentsByID(r2.ParentID)
+                if err != nil {
+                    pr.log.Error(fmt.Sprintf("Error while getting parents for ID: %s", r2.ParentID), zap.Error(err))
+                    return false
+                }
+                for _, pp1 := range p1 {
+                    for _, pp2 := range p2 {
+                        if pp1.ID == pp2.ID {
+                            return true
+                        }
+                    }
+                }
+            }
+        }
+    }
+    return false
 }

@@ -41,7 +41,7 @@ func (a *Application) CreateRelationships(ctx context.Context, drs []domain.Rela
 
 	for i, dr := range drs {
 		id, err := a.repository.CreateRelationship(ctx, dr)
-		if err != nil {
+    if err != nil {
 			return ids, err
 		}
 
