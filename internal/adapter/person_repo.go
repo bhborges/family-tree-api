@@ -53,7 +53,6 @@ func (pr *PostgresRepository) GetPersonByID(ctx context.Context, id string) (*do
 	err := tx.Where(&domain.Person{
 		ID: id,
 	}).First(&p).Error
-
 	if errors.Is(err, gorm.ErrRecordNotFound) {
 		return nil, app.ErrPersonNotFound
 	}

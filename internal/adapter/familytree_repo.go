@@ -3,6 +3,7 @@ package adapter
 import (
 	"context"
 
+	"github.com/bhborges/family-tree-api/internal/app"
 	"github.com/bhborges/family-tree-api/internal/domain"
 )
 
@@ -33,6 +34,7 @@ func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*
 	q := pr.db.Raw(qBuildFamilyTreeByPerson, id, id)
 
 	rows, err := q.Rows()
+
 	if err != nil {
 		return nil, err
 	}
@@ -43,6 +45,9 @@ func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*
 	defer rows.Close()
 
 	rs := make(map[string][]string)
+	if len(rs) == 0 {
+		return nil, app.ErrPersonNotFound
+	}
 
 	for rows.Next() {
 		var name string
