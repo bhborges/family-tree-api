@@ -14,6 +14,37 @@ import (
 	"go.uber.org/zap"
 )
 
+// ListRelationships list all relationships
+func (h *HTTPServer) ListRelationships(w http.ResponseWriter, r *http.Request) {
+	p, err := h.application.ListRelationships(r.Context())
+
+	if errors.Is(err, app.ErrRelationshipNotFound) {
+		render.Status(r, http.StatusNotFound)
+		render.PlainText(w, r, fmt.Sprintf("%s", app.ErrRelationshipNotFound))
+	}
+
+	if err != nil {
+		newrelic.FromContext(r.Context()).NoticeError(err)
+		h.log.Error("unexpected error retrieving list of relatioships from API server", zap.Error(err))
+		w.WriteHeader(http.StatusInternalServerError)
+
+		return
+	}
+
+	render.Status(r, http.StatusOK)
+
+	switch r.Header.Get("Accept") {
+	case "application/xml":
+		render.XML(w, r, p)
+	case "application/octet-stream":
+		bytes, _ := json.Marshal(p)
+		render.Data(w, r, bytes)
+	default:
+		render.JSON(w, r, p)
+	}
+
+}
+
 // UpdateRelationship updates an existing relationship.
 func (h *HTTPServer) UpdateRelationship(w http.ResponseWriter, r *http.Request) {
 	dr := domain.Relationship{}

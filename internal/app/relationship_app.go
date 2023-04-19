@@ -9,6 +9,24 @@ import (
 	"github.com/newrelic/go-agent/v3/newrelic"
 )
 
+// ListRelationships list all relationships
+func (a *Application) ListRelationships(ctx context.Context) ([]*domain.Relationship, error) {
+	trans := newrelic.FromContext(ctx)
+	if trans != nil {
+		segmentName := fmt.Sprintf("%s:%s", _SegmentPrefix, "ListRelationships")
+		segment := trans.StartSegment(segmentName)
+
+		defer segment.End()
+	}
+
+	p, err := a.repository.ListRelationships(ctx)
+	if err != nil {
+		return nil, err
+	}
+
+	return p, nil
+}
+
 // CreateRelationship create a new relationship.
 func (a *Application) CreateRelationship(ctx context.Context, dr domain.Relationship) (string, error) {
 	trans := newrelic.FromContext(ctx)
@@ -41,7 +59,7 @@ func (a *Application) CreateRelationships(ctx context.Context, drs []domain.Rela
 
 	for i, dr := range drs {
 		id, err := a.repository.CreateRelationship(ctx, dr)
-    if err != nil {
+		if err != nil {
 			return ids, err
 		}
 

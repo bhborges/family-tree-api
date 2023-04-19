@@ -45,9 +45,6 @@ func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*
 	defer rows.Close()
 
 	rs := make(map[string][]string)
-	if len(rs) == 0 {
-		return nil, app.ErrPersonNotFound
-	}
 
 	for rows.Next() {
 		var name string
@@ -68,6 +65,7 @@ func (pr *PostgresRepository) BuildFamilyTree(ctx context.Context, id string) (*
 		}
 	}
 
+  if len(rs) == 0 { return nil, app.ErrPersonNotFound }
 	// create members slice and populate it with Member structs
 	ms := make([]*domain.Member, 0)
 

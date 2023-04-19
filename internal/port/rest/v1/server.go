@@ -29,6 +29,7 @@ type Application interface {
 	CreatePeople(context.Context, []domain.Person) ([]string, error)
 	UpdatePerson(context.Context, domain.Person) error
 	DeletePerson(context.Context, string) error
+	ListRelationships(context.Context) ([]*domain.Relationship, error)
 	CreateRelationship(context.Context, domain.Relationship) (string, error)
 	CreateRelationships(context.Context, []domain.Relationship) ([]string, error)
 	UpdateRelationship(context.Context, domain.Relationship) error
@@ -71,6 +72,7 @@ func RegisterHandlers(h *HTTPServer) {
 			r.Delete("/{id}", http.WithAPM(h.apm, "/{id}", h.DeleteRelationship))
 		})
 		r.Route("/relationships", func(r chi.Router) {
+			r.Get("/", http.WithAPM(h.apm, "/", h.ListRelationships))
 			r.Post("/", http.WithAPM(h.apm, "/", h.CreateRelationships))
 		})
 	})

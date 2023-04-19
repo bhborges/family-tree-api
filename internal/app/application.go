@@ -21,6 +21,7 @@ type Application struct {
 // Repository specifies the signature of a person repository.
 type Repository interface {
 	ListPeople(context.Context) ([]*domain.Person, error)
+	ListRelationships(context.Context) ([]*domain.Relationship, error)
 	GetPersonByID(context.Context, string) (*domain.Person, error)
 	CreatePerson(context.Context, domain.Person) (string, error)
 	CreatePeople(context.Context, []domain.Person) ([]string, error)
